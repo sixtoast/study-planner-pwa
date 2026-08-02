@@ -2,21 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { getSessions, getStreak, getTotalMinutesThisWeek } from "@/lib/storage";
+import { getAchievements, type Achievement } from "@/lib/achievements";
 import type { StudySession } from "@/types";
-import { Flame, Clock, BookOpen, BarChart3 } from "lucide-react";
+import { Flame, Clock, BookOpen, BarChart3, Trophy } from "lucide-react";
 
 export default function StatsPage() {
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [streak, setStreak] = useState(0);
   const [weekMinutes, setWeekMinutes] = useState(0);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
 
   useEffect(() => {
     setSessions(getSessions());
     setStreak(getStreak());
     setWeekMinutes(getTotalMinutesThisWeek());
+    setAchievements(getAchievements());
   }, []);
 
-  // Subject breakdown
   const subjectMap = sessions.reduce<Record<string, number>>((acc, s) => {
     acc[s.subject] = (acc[s.subject] || 0) + s.duration_minutes;
     return acc;
@@ -29,13 +31,14 @@ export default function StatsPage() {
   const totalMinutes = sessions.reduce((sum, s) => sum + s.duration_minutes, 0);
   const totalHours = (totalMinutes / 60).toFixed(1);
   const weekHours = (weekMinutes / 60).toFixed(1);
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Progress & Stats</h1>
         <p className="mt-1 text-slate-400">
-          Your study data stored on this device
+          Your study data and achievements
         </p>
       </div>
 
@@ -67,12 +70,43 @@ export default function StatsPage() {
 
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-400">Sessions</p>
-            <BookOpen className="h-5 w-5 text-violet-400" />
+            <p className="text-sm text-slate-400">Achievements</p>
+            <Trophy className="h-5 w-5 text-yellow-400" />
           </div>
-          <p className="mt-2 text-2xl font-bold">{sessions.length}</p>
+          <p className="mt-2 text-2xl font-bold">{unlockedCount}/{achievements.length}</p>
         </div>
       </div>
+
+      {/* Achievements */}
+      <section>
+        <h2 className="mb-3 text-lg font-semibold flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-yellow-400" />
+          Achievements
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {achievements.map((a) => (
+            <div
+              key={a.id}
+              className={`rounded-xl border p-4 flex items-start gap-3 ${
+                a.unlocked
+                  ? "border-yellow-500/40 bg-yellow-500/10"
+                  : "border-slate-800 bg-slate-900/40 opacity-60"
+              }`}
+            >
+              <span className="text-2xl">{a.icon}</span>
+              <div>
+                <p className="font-medium">{a.title}</p>
+                <p className="text-sm text-slate-400">{a.description}</p>
+                {a.unlocked && a.unlockedAt && (
+                  <p className="text-xs text-yellow-400/80 mt-1">
+                    Unlocked {new Date(a.unlockedAt).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Subject breakdown */}
       <section>
@@ -111,7 +145,7 @@ export default function StatsPage() {
           <p className="text-slate-400 text-sm">No sessions yet. Start the Pomodoro timer!</p>
         ) : (
           <div className="space-y-2">
-            {sessions.slice(0, 15).map((s) => (
+            {sessions.slice(0, 12).map((s) => (
               <div
                 key={s.id}
                 className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm"
