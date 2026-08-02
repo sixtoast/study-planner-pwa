@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUpcomingExams, getExamDisplayName } from "@/data/exams";
+import { getExamDisplayName } from "@/data/exams";
 import { daysUntil, formatDuration } from "@/lib/utils";
 import { getStreak, getTotalMinutesThisWeek } from "@/lib/storage";
 import { getRecommendations, type StudyRecommendation } from "@/lib/recommender";
@@ -11,10 +11,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 export default function DashboardPage() {
-  const upcoming = getUpcomingExams(6);
-  const nextExam = upcoming[0];
-  const daysToNext = nextExam ? daysUntil(nextExam.date) : null;
-
   const [streak, setStreak] = useState(0);
   const [weekMinutes, setWeekMinutes] = useState(0);
   const [recs, setRecs] = useState<StudyRecommendation[]>([]);
@@ -23,26 +19,28 @@ export default function DashboardPage() {
   useEffect(() => {
     setStreak(getStreak());
     setWeekMinutes(getTotalMinutesThisWeek());
-    setRecs(getRecommendations(4));
+    setRecs(getRecommendations(5));
     setAchievementsUnlocked(getUnlockedCount());
   }, []);
 
   const weekHours = (weekMinutes / 60).toFixed(1);
+  const nextRec = recs[0];
+  const daysToNext = nextRec ? nextRec.daysLeft : null;
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="mt-1 text-slate-400">
-          Your 2026 exam preparation command centre
+          Your personal 2026 exam preparation command centre
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Next Exam"
-          value={nextExam ? getExamDisplayName(nextExam) : "None"}
+          title="Next Priority"
+          value={nextRec ? getExamDisplayName(nextRec.exam) : "None"}
           subtitle={
             daysToNext !== null
               ? daysToNext === 0
@@ -82,15 +80,15 @@ export default function DashboardPage() {
         </div>
 
         {recs.length === 0 ? (
-          <p className="text-slate-400 text-sm">No upcoming exams found.</p>
+          <p className="text-slate-400 text-sm">No upcoming exams found for your subjects.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {recs.map((rec) => (
               <div
                 key={rec.exam.id}
                 className="rounded-xl border border-slate-800 bg-slate-900/60 p-4"
               >
-                <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
                   <div>
                     <p className="font-semibold text-lg">
                       {getExamDisplayName(rec.exam)}
@@ -110,12 +108,31 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                <p className="text-sm text-slate-300 mb-1">
-                  <span className="font-medium text-white">Action: </span>
+                <p className="text-sm text-slate-200 mb-2">
+                  <span className="font-medium text-white">What to do: </span>
                   {rec.suggestedAction}
                 </p>
+
+                {rec.commonTopics && rec.commonTopics.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-medium text-slate-400 mb-1">
+                      Commonly tested topics in past papers:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {rec.commonTopics.map((topic) => (
+                        <span
+                          key={topic}
+                          className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-slate-300"
+                        >
+                          {topic}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-sm text-slate-400 mb-3">
-                  <span className="font-medium text-slate-300">Past paper focus: </span>
+                  <span className="font-medium text-slate-300">Past paper strategy: </span>
                   {rec.pastPaperFocus}
                 </p>
 
@@ -134,48 +151,8 @@ export default function DashboardPage() {
         )}
 
         <p className="mt-3 text-xs text-slate-500">
-          Recommendations prioritise exams that are closest and emphasise past-paper practice (the most effective Grade 12 method).
+          Advice is based on common patterns in Grade 12 / NSC past papers. Subjects you don’t take (Geography, Tourism, Accounting, Life Sciences, Business Studies) are hidden.
         </p>
-      </section>
-
-      {/* Upcoming exams compact */}
-      <section>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Upcoming Exams</h2>
-          <Link href="/exams" className="text-sm text-blue-400 hover:text-blue-300">
-            View all →
-          </Link>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {upcoming.map((exam) => {
-            const days = daysUntil(exam.date);
-            return (
-              <div
-                key={exam.id}
-                className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition hover:border-slate-700"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium">{getExamDisplayName(exam)}</p>
-                    <p className="mt-1 text-sm text-slate-400">
-                      {exam.date} · {exam.startTime} · {formatDuration(exam.durationMinutes)}
-                    </p>
-                  </div>
-                  <span
-                    className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                    style={{
-                      backgroundColor: `${exam.color}22`,
-                      color: exam.color,
-                    }}
-                  >
-                    {days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days}d`}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </section>
 
       {/* Quick actions */}
