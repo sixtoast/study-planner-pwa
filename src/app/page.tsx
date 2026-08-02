@@ -1,5 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { getUpcomingExams, getExamDisplayName } from "@/data/exams";
 import { daysUntil, formatDuration } from "@/lib/utils";
+import { getStreak, getTotalMinutesThisWeek } from "@/lib/storage";
 import { CalendarDays, Clock, Target, Flame, BookOpen } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -8,6 +12,16 @@ export default function DashboardPage() {
   const upcoming = getUpcomingExams(6);
   const nextExam = upcoming[0];
   const daysToNext = nextExam ? daysUntil(nextExam.date) : null;
+
+  const [streak, setStreak] = useState(0);
+  const [weekMinutes, setWeekMinutes] = useState(0);
+
+  useEffect(() => {
+    setStreak(getStreak());
+    setWeekMinutes(getTotalMinutesThisWeek());
+  }, []);
+
+  const weekHours = (weekMinutes / 60).toFixed(1);
 
   return (
     <div className="space-y-8">
@@ -35,14 +49,14 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Study Streak"
-          value="0 days"
-          subtitle="Start a Pomodoro session"
+          value={`${streak} day${streak === 1 ? "" : "s"}`}
+          subtitle={streak > 0 ? "Keep it going!" : "Start a Pomodoro session"}
           icon={<Flame className="h-5 w-5 text-orange-400" />}
         />
         <StatCard
           title="Hours This Week"
-          value="0h"
-          subtitle="Log study time to track"
+          value={`${weekHours}h`}
+          subtitle="From your Pomodoro sessions"
           icon={<Clock className="h-5 w-5 text-emerald-400" />}
         />
         <StatCard
@@ -96,17 +110,10 @@ export default function DashboardPage() {
         <h2 className="mb-4 text-xl font-semibold">Quick Actions</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <ActionCard href="/timer" title="Start Pomodoro" description="Focus session with timer" icon={<Clock className="h-6 w-6" />} />
-          <ActionCard href="/calendar" title="Study Calendar" description="View & edit your plan" icon={<CalendarDays className="h-6 w-6" />} />
+          <ActionCard href="/calendar" title="Study Calendar" description="View your auto plan" icon={<CalendarDays className="h-6 w-6" />} />
           <ActionCard href="/ai" title="Ask AI Tutor" description="Get explanations & plans" icon={<BookOpen className="h-6 w-6" />} />
-          <ActionCard href="/settings" title="Generate Plan" description="Auto-schedule revision" icon={<Target className="h-6 w-6" />} />
+          <ActionCard href="/settings" title="Preferences" description="Study hours & times" icon={<Target className="h-6 w-6" />} />
         </div>
-      </section>
-
-      <section className="rounded-xl border border-dashed border-slate-700 bg-slate-900/30 p-8 text-center">
-        <p className="text-slate-400">
-          Study sessions and AI-generated plans will appear here once you connect Supabase and start logging time.
-        </p>
-        <p className="mt-2 text-sm text-slate-500">See the README for setup instructions.</p>
       </section>
     </div>
   );
