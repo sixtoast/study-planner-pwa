@@ -1,121 +1,121 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { generateStudyPlan, type StudyBlock } from "@/lib/scheduler";
-import { getPrefs, savePrefs } from "@/lib/storage";
+import { generateDailyTimetable, type DayPlan } from "@/lib/dailyPlan";
+import Link from "next/link";
+import { Clock } from "lucide-react";
 
 export default function CalendarPage() {
-  const [blocks, setBlocks] = useState<StudyBlock[]>([]);
-  const [hoursPerDay, setHoursPerDay] = useState(4);
+  const [plans, setPlans] = useState<DayPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const prefs = getPrefs();
-    setHoursPerDay(prefs.studyHoursPerDay);
-    const plan = generateStudyPlan({ hoursPerDay: prefs.studyHoursPerDay });
-    setBlocks(plan);
+    const timetable = generateDailyTimetable({ maxMinutesPerDay: 180 });
+    setPlans(timetable);
     setLoading(false);
   }, []);
 
-  const regenerate = () => {
-    savePrefs({ studyHoursPerDay: hoursPerDay });
-    const plan = generateStudyPlan({ hoursPerDay });
-    setBlocks(plan);
-  };
-
-  // Group by date
-  const byDate = blocks.reduce<Record<string, StudyBlock[]>>((acc, b) => {
-    if (!acc[b.date]) acc[b.date] = [];
-    acc[b.date].push(b);
-    return acc;
-  }, {});
-
-  const sortedDates = Object.keys(byDate).sort();
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Study Calendar</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Your Study Timetable</h1>
         <p className="mt-1 text-slate-400">
-          Auto-generated revision plan based on your 2026 exams
+          Curated day-by-day plan focused on past papers for the subjects you actually take
         </p>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-wrap items-end gap-4 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-        <div>
-          <label className="mb-1 block text-sm text-slate-400">
-            Hours of study per day
-          </label>
-          <input
-            type="number"
-            min={1}
-            max={12}
-            value={hoursPerDay}
-            onChange={(e) => setHoursPerDay(Number(e.target.value) || 4)}
-            className="w-24 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-          />
-        </div>
-        <button
-          onClick={regenerate}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
-        >
-          Regenerate Plan
-        </button>
-        <p className="text-xs text-slate-500 self-center">
-          Changing hours and regenerating will create a new schedule.
-        </p>
+      <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100">
+        <p className="font-medium mb-1">How this plan works</p>
+        <ul className="list-disc list-inside space-y-1 text-blue-200/90">
+          <li>Only includes subjects you take (no Geography, Tourism, Accounting, Life Sciences, Business)</li>
+          <li>Prioritises exams that are closest</li>
+          <li>Emphasises past-paper practice (the highest-value activity)</li>
+          <li>Includes recovery / break days every 6 days and lighter days before exams</li>
+        </ul>
       </div>
 
       {loading ? (
-        <p className="text-slate-400">Generating your personalised plan…</p>
+        <p className="text-slate-400">Building your personalised timetable…</p>
       ) : (
         <div className="space-y-6">
-          {sortedDates.map((date) => (
-            <div key={date}>
-              <h2 className="mb-2 text-lg font-semibold text-slate-300">
-                {new Date(date + "T00:00:00").toLocaleDateString("en-ZA", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </h2>
-              <div className="space-y-2">
-                {byDate[date].map((block) => (
-                  <div
-                    key={block.id}
-                    className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-3"
-                  >
-                    <div
-                      className="h-10 w-1.5 rounded-full"
-                      style={{ backgroundColor: block.color }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{block.title}</p>
-                      <p className="text-sm text-slate-400">
-                        {block.startTime} – {block.endTime}
-                        {block.type === "exam" && (
-                          <span className="ml-2 rounded bg-red-500/20 px-1.5 py-0.5 text-xs text-red-400">
-                            EXAM
-                          </span>
-                        )}
-                        {block.type === "revision" && (
-                          <span className="ml-2 rounded bg-blue-500/20 px-1.5 py-0.5 text-xs text-blue-400">
-                            Revision
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+          {plans.map((day) => {
+            const isToday = day.date === today;
+            const isPast = day.date < today;
 
-          {sortedDates.length === 0 && (
-            <p className="text-slate-400">No upcoming exams found.</p>
-          )}
+            return (
+              <div
+                key={day.date}
+                className={`rounded-xl border p-4 ${
+                  isToday
+                    ? "border-blue-500 bg-blue-500/10"
+                    : isPast
+                    ? "border-slate-800 bg-slate-900/30 opacity-60"
+                    : "border-slate-800 bg-slate-900/60"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-semibold">
+                    {day.dayLabel}
+                    {isToday && (
+                      <span className="ml-2 text-sm font-normal text-blue-400">(Today)</span>
+                    )}
+                  </h2>
+                  {!day.isBreak && (
+                    <span className="text-sm text-slate-400">{day.totalMinutes} min</span>
+                  )}
+                </div>
+
+                {day.isBreak ? (
+                  <p className="text-slate-400 text-sm italic">{day.breakReason}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {day.tasks.map((task, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-slate-700/80 bg-slate-950/50 p-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                          <p className="font-medium">{task.examName}</p>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                task.priority === "critical"
+                                  ? "bg-red-500/20 text-red-400"
+                                  : task.priority === "high"
+                                  ? "bg-amber-500/20 text-amber-400"
+                                  : "bg-slate-700 text-slate-300"
+                              }`}
+                            >
+                              {task.priority}
+                            </span>
+                            <span className="text-xs text-slate-400">{task.minutes} min</span>
+                          </div>
+                        </div>
+
+                        <p className="text-sm text-slate-300 mb-1">
+                          <span className="text-slate-400">Focus: </span>
+                          {task.focus}
+                        </p>
+                        <p className="text-sm text-slate-400 mb-2">{task.action}</p>
+
+                        <Link
+                          href={`/timer?subject=${encodeURIComponent(
+                            task.examName
+                          )}&minutes=${task.minutes}`}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-blue-600/80 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500"
+                        >
+                          <Clock className="h-3.5 w-3.5" />
+                          Start timer
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
