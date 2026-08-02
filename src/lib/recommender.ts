@@ -20,6 +20,8 @@ const EXCLUDED_SUBJECTS = [
   "accounting",
   "life sciences",
   "business studies",
+  "technical sciences",
+  "technical science",
 ];
 
 /** Detailed guidance based on common patterns in Grade 12 / NSC past papers */
@@ -96,17 +98,6 @@ const PAST_PAPER_GUIDANCE: Record<
     ],
     advice:
       "Physical Sciences P1 (Physics) and P2 (Chemistry) repeatedly test Newton’s laws, electricity, stoichiometry and organic chemistry. Do full past papers under exam conditions. After each paper, list every question you got wrong and re-study those exact concepts immediately.",
-  },
-  "Technical Sciences": {
-    commonTopics: [
-      "Mechanics",
-      "Waves & light",
-      "Electricity",
-      "Matter & materials",
-      "Chemical systems",
-    ],
-    advice:
-      "Technical Sciences past papers focus on applied physics and chemistry. Mechanics and electricity dominate. Timed practice + reviewing official mark schemes is the fastest way to improve.",
   },
   "Engineering Graphics and Design": {
     commonTopics: [
