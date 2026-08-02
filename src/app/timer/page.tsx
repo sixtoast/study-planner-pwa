@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Play, Pause, RotateCcw, Coffee } from "lucide-react";
 import { saveSession, getSessions } from "@/lib/storage";
@@ -13,7 +13,7 @@ const PRESETS = [
   { label: "Custom", minutes: 45 },
 ];
 
-export default function TimerPage() {
+function TimerContent() {
   const searchParams = useSearchParams();
   const [selectedPreset, setSelectedPreset] = useState(PRESETS[0]);
   const [secondsLeft, setSecondsLeft] = useState(PRESETS[0].minutes * 60);
@@ -22,7 +22,6 @@ export default function TimerPage() {
   const [completedSessions, setCompletedSessions] = useState(0);
   const [totalSaved, setTotalSaved] = useState(0);
 
-  // Load from URL (from "What to study now" recommendations)
   useEffect(() => {
     const sub = searchParams.get("subject");
     const mins = searchParams.get("minutes");
@@ -195,5 +194,13 @@ export default function TimerPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function TimerPage() {
+  return (
+    <Suspense fallback={<div className="text-slate-400 p-8">Loading timer…</div>}>
+      <TimerContent />
+    </Suspense>
   );
 }
