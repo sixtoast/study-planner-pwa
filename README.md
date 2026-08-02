@@ -1,4 +1,4 @@
-# Study Planner PWA – 2026 Exam Prep
+# Study Planner PWA – 2026 Exam Prep 
 
 A modern Progressive Web App for planning and tracking study for the 2026 South African NSC exams (and similar).
 
