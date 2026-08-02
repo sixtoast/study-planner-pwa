@@ -2,6 +2,7 @@ import { getUpcomingExams, getExamDisplayName } from "@/data/exams";
 import { daysUntil, formatDuration } from "@/lib/utils";
 import { CalendarDays, Clock, Target, Flame, BookOpen } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 export default function DashboardPage() {
   const upcoming = getUpcomingExams(6);
@@ -120,7 +121,7 @@ function StatCard({
   title: string;
   value: string;
   subtitle: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) {
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
@@ -143,7 +144,7 @@ function ActionCard({
   href: string;
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) {
   return (
     <Link
