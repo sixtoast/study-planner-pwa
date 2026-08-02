@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { Play, Pause, RotateCcw, Coffee } from "lucide-react";
 import { saveSession, getSessions } from "@/lib/storage";
 
@@ -9,9 +10,11 @@ const PRESETS = [
   { label: "Short Break", minutes: 5 },
   { label: "Long Break", minutes: 15 },
   { label: "Deep Work", minutes: 50 },
+  { label: "Custom", minutes: 45 },
 ];
 
 export default function TimerPage() {
+  const searchParams = useSearchParams();
   const [selectedPreset, setSelectedPreset] = useState(PRESETS[0]);
   const [secondsLeft, setSecondsLeft] = useState(PRESETS[0].minutes * 60);
   const [isRunning, setIsRunning] = useState(false);
@@ -19,10 +22,24 @@ export default function TimerPage() {
   const [completedSessions, setCompletedSessions] = useState(0);
   const [totalSaved, setTotalSaved] = useState(0);
 
-  // Load total saved sessions on mount
+  // Load from URL (from "What to study now" recommendations)
   useEffect(() => {
+    const sub = searchParams.get("subject");
+    const mins = searchParams.get("minutes");
+
+    if (sub) setSubject(decodeURIComponent(sub));
+
+    if (mins) {
+      const m = parseInt(mins, 10);
+      if (!isNaN(m) && m > 0) {
+        const custom = { label: "Recommended", minutes: m };
+        setSelectedPreset(custom);
+        setSecondsLeft(m * 60);
+      }
+    }
+
     setTotalSaved(getSessions().length);
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -33,7 +50,6 @@ export default function TimerPage() {
           setIsRunning(false);
           setCompletedSessions((c) => c + 1);
 
-          // Save the completed session
           const mins = selectedPreset.minutes;
           const now = new Date();
           const start = new Date(now.getTime() - mins * 60 * 1000);
@@ -49,7 +65,6 @@ export default function TimerPage() {
 
           setTotalSaved((t) => t + 1);
 
-          // Play a short beep
           try {
             const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
             const osc = ctx.createOscillator();
