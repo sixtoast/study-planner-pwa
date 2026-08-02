@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { getUpcomingExams, getExamDisplayName } from "@/data/exams";
 import { daysUntil, formatDuration } from "@/lib/utils";
 import { getStreak, getTotalMinutesThisWeek } from "@/lib/storage";
-import { CalendarDays, Clock, Target, Flame, BookOpen } from "lucide-react";
+import { getRecommendations, type StudyRecommendation } from "@/lib/recommender";
+import { getUnlockedCount } from "@/lib/achievements";
+import { CalendarDays, Clock, Target, Flame, BookOpen, Zap, Trophy } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -15,10 +17,14 @@ export default function DashboardPage() {
 
   const [streak, setStreak] = useState(0);
   const [weekMinutes, setWeekMinutes] = useState(0);
+  const [recs, setRecs] = useState<StudyRecommendation[]>([]);
+  const [achievementsUnlocked, setAchievementsUnlocked] = useState(0);
 
   useEffect(() => {
     setStreak(getStreak());
     setWeekMinutes(getTotalMinutesThisWeek());
+    setRecs(getRecommendations(4));
+    setAchievementsUnlocked(getUnlockedCount());
   }, []);
 
   const weekHours = (weekMinutes / 60).toFixed(1);
@@ -32,6 +38,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Next Exam"
@@ -60,13 +67,78 @@ export default function DashboardPage() {
           icon={<Clock className="h-5 w-5 text-emerald-400" />}
         />
         <StatCard
-          title="Exams Remaining"
-          value={String(upcoming.length)}
-          subtitle="Until end of timetable"
-          icon={<BookOpen className="h-5 w-5 text-violet-400" />}
+          title="Achievements"
+          value={`${achievementsUnlocked}`}
+          subtitle="Unlocked badges"
+          icon={<Trophy className="h-5 w-5 text-yellow-400" />}
         />
       </div>
 
+      {/* WHAT TO STUDY NOW */}
+      <section>
+        <div className="mb-4 flex items-center gap-2">
+          <Zap className="h-5 w-5 text-amber-400" />
+          <h2 className="text-xl font-semibold">What to study now</h2>
+        </div>
+
+        {recs.length === 0 ? (
+          <p className="text-slate-400 text-sm">No upcoming exams found.</p>
+        ) : (
+          <div className="space-y-3">
+            {recs.map((rec) => (
+              <div
+                key={rec.exam.id}
+                className="rounded-xl border border-slate-800 bg-slate-900/60 p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="font-semibold text-lg">
+                      {getExamDisplayName(rec.exam)}
+                    </p>
+                    <p className="text-sm text-slate-400">{rec.reason}</p>
+                  </div>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      rec.priority === "critical"
+                        ? "bg-red-500/20 text-red-400"
+                        : rec.priority === "high"
+                        ? "bg-amber-500/20 text-amber-400"
+                        : "bg-slate-700 text-slate-300"
+                    }`}
+                  >
+                    {rec.priority.toUpperCase()}
+                  </span>
+                </div>
+
+                <p className="text-sm text-slate-300 mb-1">
+                  <span className="font-medium text-white">Action: </span>
+                  {rec.suggestedAction}
+                </p>
+                <p className="text-sm text-slate-400 mb-3">
+                  <span className="font-medium text-slate-300">Past paper focus: </span>
+                  {rec.pastPaperFocus}
+                </p>
+
+                <Link
+                  href={`/timer?subject=${encodeURIComponent(
+                    getExamDisplayName(rec.exam)
+                  )}&minutes=${rec.suggestedMinutes}`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+                >
+                  <Clock className="h-4 w-4" />
+                  Start {rec.suggestedMinutes} min session
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="mt-3 text-xs text-slate-500">
+          Recommendations prioritise exams that are closest and emphasise past-paper practice (the most effective Grade 12 method).
+        </p>
+      </section>
+
+      {/* Upcoming exams compact */}
       <section>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Upcoming Exams</h2>
@@ -106,13 +178,14 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      {/* Quick actions */}
       <section>
         <h2 className="mb-4 text-xl font-semibold">Quick Actions</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <ActionCard href="/timer" title="Start Pomodoro" description="Focus session with timer" icon={<Clock className="h-6 w-6" />} />
           <ActionCard href="/calendar" title="Study Calendar" description="View your auto plan" icon={<CalendarDays className="h-6 w-6" />} />
-          <ActionCard href="/ai" title="Ask AI Tutor" description="Get explanations & plans" icon={<BookOpen className="h-6 w-6" />} />
-          <ActionCard href="/settings" title="Preferences" description="Study hours & times" icon={<Target className="h-6 w-6" />} />
+          <ActionCard href="/stats" title="Stats & Achievements" description="Streaks and badges" icon={<Trophy className="h-6 w-6" />} />
+          <ActionCard href="/ai" title="Ask AI Tutor" description="Explanations & plans" icon={<BookOpen className="h-6 w-6" />} />
         </div>
       </section>
     </div>
