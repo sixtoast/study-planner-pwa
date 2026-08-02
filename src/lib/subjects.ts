@@ -1,6 +1,5 @@
 /**
  * Subjects the learner actually takes.
- * Easily changeable in Settings later.
  */
 export const ACTIVE_SUBJECTS = [
   "English HL",
@@ -12,8 +11,6 @@ export const ACTIVE_SUBJECTS = [
   "Mathematical Literacy",
   "Technical Maths",
   "Physical Sciences",
-  "Technical Sciences",
-  "Technical Science",
 ] as const;
 
 export function isActiveSubject(subject: string): boolean {
@@ -87,19 +84,6 @@ export const PAST_PAPER_FOCUS: Record<string, string[]> = {
     "Electricity & magnetism (circuits, motors, generators)",
     "Matter & materials (organic chemistry, intermolecular forces)",
     "Chemical change (rates, equilibrium, acids-bases, electrochem)",
-  ],
-  "Technical Sciences": [
-    "Mechanics and forces",
-    "Energy and machines",
-    "Electricity and magnetism applications",
-    "Materials and structures",
-    "Waves and optics basics",
-  ],
-  "Technical Science": [
-    "Mechanics and forces",
-    "Energy and machines",
-    "Electricity and magnetism applications",
-    "Materials and structures",
   ],
 };
 
