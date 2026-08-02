@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Send, Bot, Key, Loader2 } from "lucide-react";
 import { EXAMS_2026, getExamDisplayName } from "@/data/exams";
 
@@ -8,12 +9,13 @@ const KEY_STORAGE = "study-planner-openai-key";
 
 type Message = { role: "user" | "assistant" | "system"; content: string };
 
-export default function AIPage() {
+function AIContent() {
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
       content:
-        "Hi! I'm your personal study tutor for the 2026 exams. Ask me to explain concepts, make revision plans, create practice questions, or give exam tips. You need to add your OpenAI API key in the box below (it's stored only on this device).",
+        "Hi! I'm your personal study tutor for the 2026 exams. Ask me to explain concepts, make detailed revision plans, create practice questions, or give exam tips. Add your OpenAI API key below (stored only on this device).",
     },
   ]);
   const [input, setInput] = useState("");
@@ -21,12 +23,22 @@ export default function AIPage() {
   const [apiKey, setApiKey] = useState("");
   const [showKeyInput, setShowKeyInput] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const autoSent = useRef(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(KEY_STORAGE) || "";
     setApiKey(saved);
     if (!saved) setShowKeyInput(true);
   }, []);
+
+  // Pre-fill from calendar "Get detailed AI plan" buttons
+  useEffect(() => {
+    const prompt = searchParams.get("prompt");
+    if (prompt && !autoSent.current) {
+      setInput(decodeURIComponent(prompt));
+      autoSent.current = true;
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -50,17 +62,22 @@ export default function AIPage() {
     setMessages((m) => [...m, { role: "user", content: userMsg }]);
     setLoading(true);
 
-    // Build context about the exams
-    const examContext = EXAMS_2026.slice(0, 12)
+    const examContext = EXAMS_2026.slice(0, 15)
       .map((e) => `- ${getExamDisplayName(e)} on ${e.date}`)
       .join("\n");
 
-    const systemPrompt = `You are a helpful, encouraging South African study tutor helping a Grade 12 learner prepare for the 2026 NSC exams. Be clear, structured, and practical. Use simple language.
+    const systemPrompt = `You are an expert South African Grade 12 study coach preparing learners for the 2026 NSC exams. Be clear, structured, practical and encouraging.
+
+When creating study plans:
+- Give day-by-day breakdowns
+- Name specific past-paper style tasks (e.g. "Complete 2023 P1 Questions 3–5 under timed conditions, then mark with the memo")
+- Include exact topics that commonly appear in NSC and prelim papers
+- Suggest realistic times
+- Include recovery/lighter days
+- Never give vague advice like "revise the chapter" – always say exactly what to do
 
 Upcoming exams include:
-${examContext}
-
-When asked for a study plan, make it realistic for a school learner. When explaining topics, give examples. Keep answers focused and not too long.`;
+${examContext}`;
 
     try {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -75,12 +92,12 @@ When asked for a study plan, make it realistic for a school learner. When explai
             { role: "system", content: systemPrompt },
             ...messages
               .filter((m) => m.role !== "system")
-              .slice(-8) // keep last few for context
+              .slice(-6)
               .map((m) => ({ role: m.role, content: m.content })),
             { role: "user", content: userMsg },
           ],
-          temperature: 0.7,
-          max_tokens: 800,
+          temperature: 0.65,
+          max_tokens: 1200,
         }),
       });
 
@@ -90,7 +107,9 @@ When asked for a study plan, make it realistic for a school learner. When explai
       }
 
       const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a reply.";
+      const reply =
+        data.choices?.[0]?.message?.content ||
+        "Sorry, I couldn't generate a reply.";
 
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
     } catch (err: any) {
@@ -112,7 +131,7 @@ When asked for a study plan, make it realistic for a school learner. When explai
         <div>
           <h1 className="text-3xl font-bold tracking-tight">AI Tutor</h1>
           <p className="mt-1 text-slate-400">
-            Ask anything about your subjects or exam strategy
+            Detailed plans, explanations and past-paper style practice
           </p>
         </div>
         <button
@@ -127,7 +146,7 @@ When asked for a study plan, make it realistic for a school learner. When explai
       {showKeyInput && (
         <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
           <p className="text-sm text-amber-200 mb-2">
-            Paste your OpenAI API key here. It stays only on this device and is never sent anywhere except OpenAI.
+            Paste your OpenAI API key. It stays only on this device.
           </p>
           <div className="flex gap-2">
             <input
@@ -145,7 +164,7 @@ When asked for a study plan, make it realistic for a school learner. When explai
             </button>
           </div>
           <p className="mt-2 text-xs text-slate-400">
-            Get a key at platform.openai.com → API keys (use gpt-4o-mini for low cost)
+            Get a key at platform.openai.com → API keys (gpt-4o-mini is cheap and good)
           </p>
         </div>
       )}
@@ -193,7 +212,7 @@ When asked for a study plan, make it realistic for a school learner. When explai
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
-          placeholder="Explain photosynthesis… or Make a 3-day plan for Maths P1"
+          placeholder="Ask for a detailed plan or explanation…"
           className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm outline-none focus:border-blue-500"
           disabled={loading}
         />
@@ -206,5 +225,13 @@ When asked for a study plan, make it realistic for a school learner. When explai
         </button>
       </div>
     </div>
+  );
+}
+
+export default function AIPage() {
+  return (
+    <Suspense fallback={<div className="text-slate-400 p-8">Loading AI Tutor…</div>}>
+      <AIContent />
+    </Suspense>
   );
 }
