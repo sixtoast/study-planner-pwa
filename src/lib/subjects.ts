@@ -9,7 +9,6 @@ export const ACTIVE_SUBJECTS = [
   "Life Orientation (CAT)",
   "Mathematics",
   "Mathematical Literacy",
-  "Technical Maths",
   "Physical Sciences",
 ] as const;
 
@@ -70,13 +69,6 @@ export const PAST_PAPER_FOCUS: Record<string, string[]> = {
     "Maps, plans and scale",
     "Data handling (graphs, probability, statistics)",
     "Income-expenditure and break-even",
-  ],
-  "Technical Maths": [
-    "Algebraic manipulation and equations",
-    "Trigonometry and mensuration",
-    "Analytical geometry basics",
-    "Calculus introduction / rates of change",
-    "Technical applications and graphs",
   ],
   "Physical Sciences": [
     "Mechanics (Newton’s laws, momentum, work-energy, projectiles)",
