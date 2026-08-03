@@ -22,6 +22,8 @@ const EXCLUDED_SUBJECTS = [
   "business studies",
   "technical sciences",
   "technical science",
+  "technical maths",
+  "technical mathematics",
 ];
 
 function getDifficultyWeight(subject: string): number {
@@ -29,7 +31,6 @@ function getDifficultyWeight(subject: string): number {
   if (s.includes("mathematics") && !s.includes("literacy")) return 5;
   if (s.includes("physical sciences")) return 5;
   if (s.includes("engineering graphics") || s.includes("egd")) return 4;
-  if (s.includes("technical maths")) return 4;
   if (s.includes("mechanical")) return 3;
   if (s.includes("english")) return 3;
   if (s.includes("afrikaans")) return 3;
@@ -88,18 +89,6 @@ const PAST_PAPER_GUIDANCE: Record<
     ],
     advice:
       "Maths Lit past papers are application-heavy. Finance, measurement and data handling appear in almost every paper. Practise full past papers and always show all working – markers award method marks even when the final answer is incorrect.",
-  },
-  "Technical Maths": {
-    commonTopics: [
-      "Algebra & equations",
-      "Functions & graphs",
-      "Trigonometry",
-      "Analytical geometry",
-      "Mensuration",
-      "Technical applications",
-    ],
-    advice:
-      "Technical Maths past papers blend pure maths with technical applications. Prioritise algebra, trigonometry and mensuration. Timed past papers are the best way to build speed and accuracy.",
   },
   "Physical Sciences": {
     commonTopics: [
@@ -185,8 +174,8 @@ export function getRecommendations(limit = 5): StudyRecommendation[] {
 
       let priority: StudyRecommendation["priority"] = "medium";
       if (days <= 2) priority = "critical";
-      else if (days <= 5 || (days <= 10 && weight >= 4 && recentMins < 40)) {
-        // Hard subjects that are still a week+ away but neglected get HIGH priority
+      else if (days <= 5 || (days <= 12 && weight >= 4 && recentMins < 45)) {
+        // Hard subjects that are 1–2 weeks away and neglected get HIGH priority early
         priority = "high";
       }
 
@@ -213,9 +202,9 @@ export function getRecommendations(limit = 5): StudyRecommendation[] {
         reason = `${days} days left – strong preparation window`;
         suggestedAction = `Mix short content revision with past-paper questions. ${guidance.advice}`;
         suggestedMinutes = 55;
-      } else if (days <= 12 && weight >= 4) {
-        reason = `${days} days left – hard subject, start building now`;
-        suggestedAction = `This is a demanding subject. Begin solid past-paper practice early. High-yield areas: ${guidance.commonTopics.slice(0, 4).join(", ")}. ${guidance.advice}`;
+      } else if (days <= 14 && weight >= 4) {
+        reason = `${days} days left – hard subject, start building now (at least a week early)`;
+        suggestedAction = `This is a demanding subject. Begin solid past-paper practice early so you are not cramming. High-yield areas: ${guidance.commonTopics.slice(0, 4).join(", ")}. ${guidance.advice}`;
         suggestedMinutes = 50;
       } else {
         reason = `${days} days left – build foundations`;
@@ -223,7 +212,7 @@ export function getRecommendations(limit = 5): StudyRecommendation[] {
         suggestedMinutes = 45;
       }
 
-      if (recentMins < 25 && days <= 12) {
+      if (recentMins < 25 && days <= 14) {
         reason += " · Little recent practice on this subject";
       }
 
@@ -243,7 +232,6 @@ export function getRecommendations(limit = 5): StudyRecommendation[] {
       if (pOrder[a.priority] !== pOrder[b.priority]) {
         return pOrder[a.priority] - pOrder[b.priority];
       }
-      // Prefer harder subjects when priority is equal
       const wa = getDifficultyWeight(a.exam.subject);
       const wb = getDifficultyWeight(b.exam.subject);
       if (wa !== wb) return wb - wa;
