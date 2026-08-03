@@ -21,13 +21,12 @@ export type DayPlan = {
   totalMinutes: number;
 };
 
-/** Higher number = start earlier and get more sessions */
+/** Higher number = harder subject → start earlier and get more sessions */
 function getDifficultyWeight(subject: string): number {
   const s = subject.toLowerCase();
-  if (s.includes("mathematics") && !s.includes("literacy")) return 5; // Pure Maths
+  if (s.includes("mathematics") && !s.includes("literacy")) return 5;
   if (s.includes("physical sciences")) return 5;
   if (s.includes("engineering graphics") || s.includes("egd")) return 4;
-  if (s.includes("technical maths")) return 4;
   if (s.includes("mechanical")) return 3;
   if (s.includes("english")) return 3;
   if (s.includes("afrikaans")) return 3;
@@ -54,7 +53,7 @@ function buildAction(
     }
     return `Active practice on ${focus} for ${examName}: 12 min reviewing the exact method/steps, then immediately complete 5 past-paper questions under light time pressure. Mark and fix gaps.`;
   }
-  // More than a week away – still concrete
+  // 8–14+ days out – still concrete, building foundation
   if (sessionNumber % 3 === 0) {
     return `Introduce ${focus} with past papers: review core steps for 10–12 min, then attempt 4 past-paper questions. Study how the memo awards marks so you know what examiners look for.`;
   }
@@ -87,8 +86,6 @@ export function generateDailyTimetable(options?: {
     const dateStr = format(current, "yyyy-MM-dd");
     const dayLabel = format(current, "EEEE d MMM");
 
-    // Consider ALL remaining exams (not just 14 days)
-    // but give higher weight once they are inside the 10–14 day window
     const remainingExams = myExams.filter((e) => {
       const d = differenceInCalendarDays(parseISO(e.date), current);
       return d >= 0;
@@ -129,35 +126,45 @@ export function generateDailyTimetable(options?: {
     const tasks: DailyTask[] = [];
     let remaining = hasExamTomorrow ? 55 : maxMinutes;
 
-    // Smart sort:
-    // 1. Critical exams (≤3 days) first
-    // 2. Then exams that are within 10 days and still have low attention (force early coverage)
-    // 3. Then higher difficulty subjects
-    // 4. Then least attention overall
+    /*
+     * Sorting priority (most important first):
+     * 1. Critical (≤3 days)
+     * 2. Starved subjects that are ≤14 days away and still have < 2 sessions
+     *    → this guarantees every subject is touched at least a week early
+     * 3. Hard subjects (weight ≥ 4) that are ≤14 days away
+     * 4. Least attention overall
+     * 5. Closest exam
+     */
     const sorted = [...remainingExams].sort((a, b) => {
       const da = differenceInCalendarDays(parseISO(a.date), current);
       const db = differenceInCalendarDays(parseISO(b.date), current);
-
-      const aCritical = da <= 3 ? 0 : 1;
-      const bCritical = db <= 3 ? 0 : 1;
-      if (aCritical !== bCritical) return aCritical - bCritical;
-
-      // Force subjects that are ≤10 days away and have almost no sessions yet
-      const aNeedsEarly = da <= 10 && (attention[a.id] || 0) < 2 ? 0 : 1;
-      const bNeedsEarly = db <= 10 && (attention[b.id] || 0) < 2 ? 0 : 1;
-      if (aNeedsEarly !== bNeedsEarly) return aNeedsEarly - bNeedsEarly;
-
-      // Prefer harder subjects when both are still far
-      const diffA = getDifficultyWeight(a.subject);
-      const diffB = getDifficultyWeight(b.subject);
-      if (diffA !== diffB) return diffB - diffA;
-
-      // Then least attention
       const attA = attention[a.id] || 0;
       const attB = attention[b.id] || 0;
+      const wA = getDifficultyWeight(a.subject);
+      const wB = getDifficultyWeight(b.subject);
+
+      // 1. Critical window
+      const aCrit = da <= 3 ? 0 : 1;
+      const bCrit = db <= 3 ? 0 : 1;
+      if (aCrit !== bCrit) return aCrit - bCrit;
+
+      // 2. Starved subjects inside 14-day window (force early coverage)
+      const aStarved = da <= 14 && attA < 2 ? 0 : 1;
+      const bStarved = db <= 14 && attB < 2 ? 0 : 1;
+      if (aStarved !== bStarved) return aStarved - bStarved;
+
+      // 3. Hard subjects inside 14-day window that still need more practice
+      const aHardEarly = da <= 14 && wA >= 4 && attA < 4 ? 0 : 1;
+      const bHardEarly = db <= 14 && wB >= 4 && attB < 4 ? 0 : 1;
+      if (aHardEarly !== bHardEarly) return aHardEarly - bHardEarly;
+
+      // 4. Least attention
       if (attA !== attB) return attA - attB;
 
-      // Finally closest exam
+      // 5. Harder subjects
+      if (wA !== wB) return wB - wA;
+
+      // 6. Closest
       return da - db;
     });
 
@@ -165,23 +172,21 @@ export function generateDailyTimetable(options?: {
       if (remaining < 30) break;
 
       const daysLeft = differenceInCalendarDays(parseISO(exam.date), current);
-
-      // Don't schedule very early for easy subjects (save time for hard ones)
       const weight = getDifficultyWeight(exam.subject);
-      if (daysLeft > 14 && weight <= 2 && (attention[exam.id] || 0) >= 1) {
-        continue; // LO etc. don't need many early sessions
-      }
+      const sessionsSoFar = attention[exam.id] || 0;
 
-      // Hard subjects must start getting sessions once inside 12 days
-      // (even if other exams are closer)
-      if (daysLeft > 18 && weight >= 4 && (attention[exam.id] || 0) >= 2) {
-        continue; // already gave them early attention
-      }
+      // Easy subjects (LO etc.) don't need many early sessions
+      if (daysLeft > 12 && weight <= 1 && sessionsSoFar >= 1) continue;
+
+      // Don't over-schedule very distant easy/medium subjects
+      if (daysLeft > 16 && weight <= 3 && sessionsSoFar >= 2) continue;
+
+      // Hard subjects: allow early sessions from ~16 days out, but cap once well covered
+      if (daysLeft > 16 && weight >= 4 && sessionsSoFar >= 3) continue;
 
       const topics = getFocusTopics(exam.subject);
-      const topicIndex = (attention[exam.id] || 0) % topics.length;
+      const topicIndex = sessionsSoFar % topics.length;
       const focus = topics[topicIndex];
-      const sessionNumber = attention[exam.id] || 0;
 
       let minutes = 45;
       let priority: DailyTask["priority"] = "medium";
@@ -195,8 +200,8 @@ export function generateDailyTimetable(options?: {
       } else if (daysLeft <= 7) {
         minutes = Math.min(55, remaining);
         priority = "high";
-      } else if (daysLeft <= 12 && weight >= 4) {
-        // Hard subjects get solid sessions even 8–12 days out
+      } else if (daysLeft <= 14 && weight >= 4) {
+        // Hard subjects get solid high-priority sessions 1–2 weeks out
         minutes = Math.min(50, remaining);
         priority = "high";
       } else {
@@ -213,13 +218,13 @@ export function generateDailyTimetable(options?: {
           getExamDisplayName(exam),
           focus,
           daysLeft,
-          sessionNumber
+          sessionsSoFar
         ),
         minutes,
         priority,
       });
 
-      attention[exam.id] = (attention[exam.id] || 0) + 1;
+      attention[exam.id] = sessionsSoFar + 1;
       remaining -= minutes;
     }
 
