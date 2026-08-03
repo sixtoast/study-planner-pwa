@@ -24,6 +24,7 @@ const EXCLUDED_SUBJECTS = [
   "technical science",
   "technical maths",
   "technical mathematics",
+  "mathematical literacy",
 ];
 
 function getDifficultyWeight(subject: string): number {
@@ -34,7 +35,6 @@ function getDifficultyWeight(subject: string): number {
   if (s.includes("mechanical")) return 3;
   if (s.includes("english")) return 3;
   if (s.includes("afrikaans")) return 3;
-  if (s.includes("mathematical literacy")) return 2;
   if (s.includes("life orientation")) return 1;
   return 2;
 }
@@ -78,17 +78,6 @@ const PAST_PAPER_GUIDANCE: Record<
     ],
     advice:
       "Maths P1 repeatedly tests calculus, algebra and functions. P2 focuses on geometry, trigonometry and analytical geometry. The highest-yield activity is full timed past papers followed by careful error analysis. Spend extra time on the sections you consistently get wrong.",
-  },
-  "Mathematical Literacy": {
-    commonTopics: [
-      "Finance (interest, budgets, tariffs, inflation)",
-      "Measurement & conversions",
-      "Maps, plans & scale",
-      "Data handling",
-      "Probability",
-    ],
-    advice:
-      "Maths Lit past papers are application-heavy. Finance, measurement and data handling appear in almost every paper. Practise full past papers and always show all working – markers award method marks even when the final answer is incorrect.",
   },
   "Physical Sciences": {
     commonTopics: [
@@ -175,7 +164,6 @@ export function getRecommendations(limit = 5): StudyRecommendation[] {
       let priority: StudyRecommendation["priority"] = "medium";
       if (days <= 2) priority = "critical";
       else if (days <= 5 || (days <= 12 && weight >= 4 && recentMins < 45)) {
-        // Hard subjects that are 1–2 weeks away and neglected get HIGH priority early
         priority = "high";
       }
 
