@@ -17,35 +17,34 @@ export default function CalendarPage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  // Collect unique upcoming subjects for the AI plan buttons
   const uniqueSubjects = Array.from(
     new Set(
       plans
         .flatMap((d) => d.tasks.map((t) => t.examName))
         .filter(Boolean)
     )
-  ).slice(0, 8);
+  ).slice(0, 10);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Your Study Timetable</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Final Exam Study Timetable</h1>
         <p className="mt-1 text-slate-400">
-          Day-by-day plan with specific past-paper tasks for the subjects you take
+          Day-by-day plan for your 2026 NSC Final exams – prioritised by difficulty and date
         </p>
       </div>
 
       <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100">
-        <p className="font-medium mb-1">How to use this plan</p>
+        <p className="font-medium mb-1">How this plan works</p>
         <ul className="list-disc list-inside space-y-1 text-blue-200/90">
-          <li>Each day shows exactly what to do (no vague “revise”)</li>
-          <li>Focus is on past-paper questions and timed practice</li>
-          <li>Break days are built in so you don’t burn out</li>
-          <li>Want an even more detailed plan for one subject? Use the AI buttons below</li>
+          <li>Hard subjects (Maths, Physical Sciences, EGD) start early – at least 1–2 weeks before</li>
+          <li>Only one hard subject per day so you don’t overload</li>
+          <li>Every task is specific (past-paper drills, timed sections, mark + correct)</li>
+          <li>Rest days every 5 days + lighter days before exams</li>
+          <li>Use the AI buttons below for a full custom plan per subject</li>
         </ul>
       </div>
 
-      {/* AI detailed plans */}
       {uniqueSubjects.length > 0 && (
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
           <p className="text-sm font-medium mb-3 flex items-center gap-2">
@@ -54,7 +53,7 @@ export default function CalendarPage() {
           </p>
           <div className="flex flex-wrap gap-2">
             {uniqueSubjects.map((name) => {
-              const prompt = `Create a detailed day-by-day study plan for my Grade 12 ${name} exam. Use common questions and topics that appear in NSC and prelim past papers. For each day until the exam give me: 1) exact topics to cover, 2) specific past-paper style tasks (e.g. "do 2022 P1 Question 5 under timed conditions"), 3) how long to spend, and 4) what to review after. Make it realistic for a school learner and include one lighter day every 5–6 days. Start from today.`;
+              const prompt = `Create a detailed day-by-day study plan for my Grade 12 ${name} FINAL exam (NSC 2026). Use common questions and topics that appear in recent NSC final and prelim past papers. For each day until the exam give me: 1) exact topics to cover, 2) specific past-paper style tasks (e.g. "do a 2023/2024 P1 section under timed conditions"), 3) how long to spend, and 4) what to review after marking. Make it realistic for a school learner, prioritise high-frequency topics, and include one lighter/rest day every 5–6 days. Start from today.`;
               return (
                 <Link
                   key={name}
@@ -70,7 +69,7 @@ export default function CalendarPage() {
       )}
 
       {loading ? (
-        <p className="text-slate-400">Building your personalised timetable…</p>
+        <p className="text-slate-400">Building your personalised final exam timetable…</p>
       ) : (
         <div className="space-y-6">
           {plans.map((day) => {
