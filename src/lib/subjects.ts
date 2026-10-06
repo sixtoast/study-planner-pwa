@@ -6,7 +6,6 @@ export const ACTIVE_SUBJECTS = [
   "Afrikaans FAL",
   "Engineering Graphics and Design",
   "Mechanical Technology",
-  "Life Orientation (CAT)",
   "Mathematics",
   "Physical Sciences",
 ] as const;
@@ -17,57 +16,59 @@ export function isActiveSubject(subject: string): boolean {
   );
 }
 
-/** Common high-yield topics / past-paper focus for each subject (Grade 12 level) */
+/**
+ * High-yield final exam topics based on typical NSC / past-paper patterns.
+ * Ordered roughly by frequency and importance.
+ */
 export const PAST_PAPER_FOCUS: Record<string, string[]> = {
   "English HL": [
-    "Essay writing (argumentative & discursive) – structure, thesis, linking",
-    "Comprehension strategies + visual literacy",
-    "Poetry: unseen poem technique (diction, imagery, tone, theme)",
-    "Literature essay – character, theme, and contextual questions",
-    "Transactional writing (letter, article, speech) formats and tone",
+    "P3 Essay writing (argumentative & discursive) – structure, thesis, linking devices",
+    "P3 Transactional writing (formal letter, article, speech, report) – formats and tone",
+    "P1 Comprehension strategies + visual literacy + summary",
+    "P1 Language structures & conventions (editing, rewriting)",
+    "P2 Poetry: unseen poem technique (diction, imagery, tone, theme, structure)",
+    "P2 Literature essay – character, theme, and contextual questions (set works)",
   ],
   "Afrikaans FAL": [
-    "Begripstoets strategies + woordeskat",
-    "Opsomming (summary) technique",
-    "Stellen en steun / argumentatiewe opstel",
-    "Ongelede gedig – beeldspraak, toon, tema",
-    "Transaksionele skryfwerk (brief, artikel, toespraak)",
+    "P3 Stellen en steun / argumentatiewe opstel – struktuur en bewyse",
+    "P3 Transaksionele skryfwerk (brief, artikel, toespraak, verslag) – formate",
+    "P1 Begripstoets strategies + woordeskat + opsomming",
+    "P1 Taalstrukture en -konvensies",
+    "P2 Ongelede gedig – beeldspraak, toon, tema, struktuur",
+    "P2 Literatuur opstel – karakter, tema, kontekstuele vrae (voorgeskrewe werke)",
   ],
   "Engineering Graphics and Design": [
-    "Solid geometry & sectional views",
+    "Solid geometry & sectional views (P1/P2)",
     "Isometric & perspective drawings",
-    "Machine drawings & assembly",
+    "Machine drawings & assembly drawings",
     "Loci and interpenetrations",
-    "Civil drawings / building drawings basics",
+    "Civil / building drawings basics",
+    "Orthographic projection accuracy and line work",
   ],
   "Mechanical Technology": [
-    "Safety and tools",
+    "Safety and tools (theory + application)",
     "Materials and heat treatment",
     "Forces, stress & strain calculations",
     "Joining methods & welding symbols",
-    "Maintenance and systems (pneumatics/hydraulics if applicable)",
-  ],
-  "Life Orientation (CAT)": [
-    "Career and study choices + CV / cover letter",
-    "Social and environmental responsibility",
-    "Democracy, human rights and diversity",
-    "Health, wellbeing and decision-making",
-    "Physical Education practical component prep",
+    "Maintenance and systems (pneumatics/hydraulics if in your curriculum)",
   ],
   "Mathematics": [
-    "Calculus (differentiation + applications – maxima/minima, rates)",
-    "Algebra & equations (exponents, logs, surds, remainder theorem)",
-    "Analytical Geometry (circles, lines, angles)",
-    "Trigonometry (identities, equations, 3D)",
-    "Euclidean Geometry (circle geometry theorems)",
+    "Calculus (differentiation + applications – maxima/minima, rates of change)",
+    "Algebra & equations (exponents, logs, surds, remainder/factor theorem)",
+    "Analytical Geometry (circles, lines, angles, tangents)",
+    "Trigonometry (identities, equations, 2D/3D problems)",
+    "Euclidean Geometry (circle geometry theorems and proofs)",
     "Financial Maths & Probability",
   ],
   "Physical Sciences": [
-    "Mechanics (Newton’s laws, momentum, work-energy, projectiles)",
-    "Waves, sound & light (Doppler, diffraction, 2D/3D)",
-    "Electricity & magnetism (circuits, motors, generators)",
-    "Matter & materials (organic chemistry, intermolecular forces)",
-    "Chemical change (rates, equilibrium, acids-bases, electrochem)",
+    // Physics-heavy (P1)
+    "Mechanics – Newton’s laws, momentum, work-energy theorem, projectiles",
+    "Waves, sound & light – Doppler effect, diffraction, 2D/3D wave problems",
+    "Electricity & magnetism – circuits, motors, generators, electromagnetic induction",
+    // Chemistry-heavy (P2)
+    "Matter & materials – organic chemistry (reactions, functional groups), intermolecular forces",
+    "Chemical change – rates of reaction, chemical equilibrium, acids-bases, electrochemistry",
+    "Stoichiometry and quantitative chemistry calculations",
   ],
 };
 
